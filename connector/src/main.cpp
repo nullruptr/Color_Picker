@@ -6,6 +6,7 @@
 #include "ui/mainframe.hpp"
 #include "get_colour.hpp"
 #include "modal_guard.hpp"
+#include "wx_runtime.hpp"
 
 namespace {
 HINSTANCE g_hModule = nullptr;
@@ -31,13 +32,9 @@ EXTERN_C __declspec(dllexport) COMMON_PLUGIN_TABLE* GetCommonPluginTable(void)
 
 EXTERN_C __declspec(dllexport) void RegisterPlugin(HOST_APP_TABLE* host)
 {
-    // DLL 内では wxIMPLEMENT_APP が使えないので手動で起動する
-    wxApp::SetInstance(new wxApp());
-    int argc = 0;
-    if (!wxEntryStart(argc, static_cast<wchar_t**>(nullptr)))
+    if (!awx::StartWx())
         return;
     g_wx_started = true;
-    wxTheApp->CallOnInit();
 
     awx::SetEditHandle(host->create_edit_handle());
 
@@ -52,7 +49,7 @@ EXTERN_C __declspec(dllexport) void UninitializePlugin()
         g_frame = nullptr;
     }
     if (g_wx_started) {
-        wxEntryCleanup();
+        awx::StopWx();
         g_wx_started = false;
     }
 }
